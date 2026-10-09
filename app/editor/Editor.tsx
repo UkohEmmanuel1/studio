@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check } from "lucide-react";
+import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check, LayoutTemplate, Shapes, Palette, Upload, Search, ChevronDown, Sparkles, Layers, ZoomIn, ZoomOut, PanelLeft, AlignLeft, MoveUpRight, Grid2X2 } from "lucide-react";
 import { Canvas, FabricImage, IText, Rect, Circle, Line, FabricObject } from "fabric";
 
 type SavedDocument = { version: 1; width: number; height: number; background: string; objects: object[] };
@@ -30,6 +30,7 @@ export default function Editor() {
   const [preset, setPreset] = useState("Instagram post");
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [ready, setReady] = useState(false);
+  const [activePanel, setActivePanel] = useState("Design");
 
   const pushHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -285,40 +286,68 @@ export default function Editor() {
     }
   };
 
-  return <main className="editor-page">
-    <header className="editor-top">
-      <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}><Link href="/" aria-label="Back to home" style={{display:"flex",alignItems:"center",gap:6,color:"#716d7c"}}><ArrowLeft size={18}/></Link><span className="logo"><span className="logo-mark">P</span></span><input aria-label="Design name" value={projectName} onChange={(e)=>{setProjectName(e.target.value);scheduleSave();}} style={{width:"min(220px,28vw)",border:0,outline:"none",fontSize:13,fontWeight:700}}/><span className="editor-status">{status}</span></div>
-      <div style={{display:"flex",gap:7,alignItems:"center"}}><button className="btn btn-secondary" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={16}/></button><button className="btn btn-secondary" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={16}/></button><button className="btn btn-secondary" onClick={saveLocal}><Save size={16}/><span className="hide-mobile">Save</span></button><button className="btn btn-primary" onClick={()=>exportDesign("png")}><Download size={16}/> Export</button></div>
+  return <main className="studio-shell">
+    <header className="studio-topbar">
+      <div className="studio-brand-group">
+        <Link href="/" className="studio-back" aria-label="Back to home"><ArrowLeft size={18}/></Link>
+        <Link href="/" className="studio-logo"><span className="studio-logo-mark">P</span><span>posterstudio</span></Link>
+        <span className="studio-top-divider"/>
+        <div className="studio-document-name"><input aria-label="Design name" value={projectName} onChange={(e)=>{setProjectName(e.target.value);scheduleSave();}}/><ChevronDown size={14}/></div>
+      </div>
+      <div className="studio-top-center"><span className="studio-save-dot"/><span>{status}</span></div>
+      <div className="studio-top-actions">
+        <button className="studio-icon-btn" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={17}/></button>
+        <button className="studio-icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={17}/></button>
+        <button className="studio-share-btn" onClick={saveLocal}><Save size={16}/> <span>Save</span></button>
+        <button className="studio-export-btn" onClick={()=>exportDesign("png")}><Download size={16}/> Export</button>
+      </div>
     </header>
-    <div className="editor-layout">
-      <aside className="editor-sidebar"><p className="panel-title">Add to your design</p>
-        <button className="editor-tool active" onClick={addText}><Type size={16} style={{display:"inline",verticalAlign:"middle",marginRight:8}}/>Add text</button>
-        <button className="editor-tool" onClick={()=>addShape("rect")}><Square size={16} style={{display:"inline",verticalAlign:"middle",marginRight:8}}/>Rectangle</button>
-        <button className="editor-tool" onClick={()=>addShape("circle")}><CircleIcon size={16} style={{display:"inline",verticalAlign:"middle",marginRight:8}}/>Circle</button>
-        <button className="editor-tool" onClick={()=>addShape("line")}><span style={{display:"inline-block",width:16,borderTop:"2px solid currentColor",verticalAlign:"middle",marginRight:8}}/>Line</button>
-        <label className="editor-tool" style={{display:"block",cursor:"pointer"}}><ImagePlus size={16} style={{display:"inline",verticalAlign:"middle",marginRight:8}}/>Upload image<input aria-label="Upload image" type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage} style={{display:"none"}}/></label>
-        <div style={{height:1,background:"#eeecf2",margin:"18px 0"}}/><p className="panel-title">Canvas size</p>
-        <label className="field"><span>Preset</span><select value={preset} onChange={(e)=>changePreset(e.target.value)}>{PRESETS.map((item)=><option key={item.label}>{item.label}</option>)}</select></label>
-        <p style={{fontSize:11,color:"#858190"}}>{canvasSize.width} × {canvasSize.height} px</p>
-        <p className="panel-title" style={{marginTop:22}}>Background</p><label className="field"><span>Canvas colour</span><input aria-label="Canvas background colour" type="color" value={background} onChange={(e)=>changeBackground(e.target.value)} style={{height:38,padding:3}}/></label>
-        <p className="editor-message">Tip: double-click text on the canvas to edit it. Drag objects to position them.</p>
-      </aside>
-      <section className="editor-canvas-area" aria-label="Design workspace">
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,width:"100%",maxWidth:720}}><span style={{fontSize:12,color:"#777482"}}>{canvasSize.width} × {canvasSize.height} px</span><label style={{display:"flex",alignItems:"center",gap:9,fontSize:12,color:"#777482"}}>Zoom <input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/>{Math.round(zoom*100)}%</label></div>
-        <div className="canvas-wrap"><canvas ref={elementRef} /></div>
-        {!ready && <p className="editor-message">Loading your design…</p>}
-        <p className="editor-message">Your draft is saved to this browser. Cloud sync and user accounts are not enabled in this starter.</p>
-      </section>
-      <aside className="editor-inspector"><p className="panel-title">Properties</p>
-        {!selected ? <div style={{padding:"22px 12px",background:"#f8f7fa",borderRadius:10,color:"#777482",fontSize:13,lineHeight:1.6}}>Select an object on the canvas to edit its properties, or add something from the left panel.</div> : <>
-          <p style={{fontSize:12,color:"#777482"}}>{selected instanceof IText ? "Text object" : selected instanceof FabricImage ? "Image object" : "Shape object"}</p>
-          {selected instanceof IText && <><label className="field"><span>Font size</span><input type="number" min="8" max="220" value={fontSize} onChange={(e)=>{const n=Number(e.target.value);setFontSize(n);applyProperty("fontSize",n);}}/></label><label className="field"><span>Font family</span><select value={selected.fontFamily || "Arial"} onChange={(e)=>applyProperty("fontFamily",e.target.value)}><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option><option>Courier New</option></select></label><label className="field"><span>Weight</span><select value={String(selected.fontWeight || "normal")} onChange={(e)=>applyProperty("fontWeight",e.target.value)}><option value="normal">Regular</option><option value="bold">Bold</option></select></label><label className="field"><span>Alignment</span><select value={selected.textAlign || "left"} onChange={(e)=>applyProperty("textAlign",e.target.value)}><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></label></>}
-          <label className="field"><span>Fill / colour</span><input type="color" value={/^#[0-9a-f]{6}$/i.test(objectColor)?objectColor:"#24212b"} onChange={(e)=>{setObjectColor(e.target.value);applyProperty(selected instanceof Line ? "stroke" : "fill",e.target.value);}} style={{height:38,padding:3}}/></label>
-          <label className="field"><span>Opacity</span><input type="range" min="0.1" max="1" step="0.05" value={selected.opacity ?? 1} onChange={(e)=>applyProperty("opacity",Number(e.target.value))}/></label>
-          <label className="field"><span>Rotation</span><input type="number" min="-360" max="360" value={Math.round(selected.angle || 0)} onChange={(e)=>applyProperty("angle",Number(e.target.value))}/></label>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginTop:18}}><button className="btn btn-secondary" onClick={duplicateObject}><Copy size={15}/> Duplicate</button><button className="btn btn-secondary" onClick={deleteObject}><Trash2 size={15}/> Delete</button></div>
+    <div className="studio-body">
+      <nav className="studio-rail" aria-label="Editor tools">
+        {[
+          {name:"Design",icon:<LayoutTemplate size={20}/>},
+          {name:"Elements",icon:<Shapes size={20}/>},
+          {name:"Text",icon:<Type size={20}/>},
+          {name:"Uploads",icon:<Upload size={20}/>},
+          {name:"Brand",icon:<Palette size={20}/>}
+        ].map((tool)=><button key={tool.name} className={activePanel===tool.name?"studio-rail-item active":"studio-rail-item"} onClick={()=>setActivePanel(tool.name)}>{tool.icon}<span>{tool.name}</span></button>)}
+        <div className="studio-rail-spacer"/>
+        <button className="studio-rail-item" onClick={()=>setActivePanel("Layers")}><Layers size={20}/><span>Layers</span></button>
+      </nav>
+      <aside className="studio-panel">
+        <div className="studio-panel-heading"><div><h2>{activePanel==="Brand"?"Brand kit":activePanel==="Layers"?"Layers":activePanel}</h2><p>{activePanel==="Design"?"Set up your canvas":activePanel==="Elements"?"Build with simple shapes":activePanel==="Text"?"Add a message":activePanel==="Uploads"?"Bring your own images":activePanel==="Brand"?"Choose your visual style":"Manage design objects"}</p></div><button className="studio-subtle-icon" title="Panel options"><PanelLeft size={16}/></button></div>
+        {activePanel==="Design" && <>
+          <label className="studio-search"><Search size={16}/><input placeholder="Search templates" aria-label="Search templates" onChange={(e)=>setStatus(e.target.value?"Template search is a preview feature":"All changes saved")}/></label>
+          <div className="studio-panel-label">Canvas format</div>
+          <div className="studio-preset-grid">{PRESETS.map((item,i)=><button key={item.label} className={preset===item.label?"studio-preset selected":"studio-preset"} onClick={()=>changePreset(item.label)}><span className={"preset-shape preset-"+i}/><span>{item.label}</span><small>{item.width} × {item.height}</small></button>)}</div>
+          <div className="studio-panel-label">Background colour</div>
+          <div className="studio-color-row"><input type="color" aria-label="Canvas background colour" value={background} onChange={(e)=>changeBackground(e.target.value)}/><input value={background.toUpperCase()} aria-label="Background hex colour" onChange={(e)=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value))changeBackground(e.target.value);}}/><button className="studio-subtle-icon" title="More colours"><Palette size={16}/></button></div>
+          <div className="studio-tip"><Sparkles size={17}/><span><strong>Make it yours</strong><br/>Start with a clean canvas, then add your own type, colour and imagery.</span></div>
         </>}
-        <div style={{height:1,background:"#eeecf2",margin:"24px 0"}}/><p className="panel-title">Export artwork</p><button className="btn btn-primary" style={{width:"100%",marginBottom:8}} onClick={()=>exportDesign("png")}><Download size={16}/> Download PNG</button><button className="btn btn-secondary" style={{width:"100%"}} onClick={()=>exportDesign("jpeg")}><Download size={16}/> Download JPEG</button>
+        {activePanel==="Elements" && <><div className="studio-panel-label">Shapes and lines</div><div className="studio-element-grid"><button onClick={()=>addShape("rect")}><Square size={26}/><span>Rectangle</span></button><button onClick={()=>addShape("circle")}><CircleIcon size={26}/><span>Circle</span></button><button onClick={()=>addShape("line")}><MoveUpRight size={26}/><span>Line</span></button><button onClick={()=>addShape("rect")}><Grid2X2 size={26}/><span>Block</span></button></div><div className="studio-tip"><Shapes size={17}/><span>Click an element to add it to the canvas. Drag to move and use the handles to resize.</span></div></>}
+        {activePanel==="Text" && <><button className="studio-add-text" onClick={addText}><Plus size={18}/> Add a text box</button><button className="studio-text-style" onClick={()=>{addText();setStatus("Headline added — double-click it to edit");}}><strong>Add a heading</strong><span>Big, bold statement</span></button><button className="studio-text-style" onClick={()=>{const c=canvasRef.current;if(!c)return;const t=new IText("Add your body text here",{left:100,top:260,fontSize:30,fontFamily:"Arial",fill:"#24212b"});c.add(t);c.setActiveObject(t);c.requestRenderAll();setSelected(t);pushHistory();scheduleSave();}}> <span style={{fontSize:17,fontWeight:700}}>Add a subheading</span><span>Support your main message</span></button><p className="studio-help">Tip: double-click any text on your canvas to edit its content.</p></>}
+        {activePanel==="Uploads" && <><label className="studio-upload-zone"><Upload size={24}/><strong>Upload an image</strong><span>PNG, JPG or WebP · up to 8 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label><p className="studio-help">Your image is placed on the canvas and stays in this browser draft.</p></>}
+        {activePanel==="Brand" && <><div className="studio-panel-label">Quick palette</div><div className="studio-swatches">{["#6941f4","#f5c45a","#252a42","#ed7854","#d6e7c5","#ffffff","#191922"].map(color=><button key={color} aria-label={"Use "+color} style={{background:color}} onClick={()=>{setObjectColor(color);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",color);else changeBackground(color);}}/>)}</div><div className="studio-panel-label">Brand colours</div><p className="studio-help">Pick a colour to apply it to the selected object, or to the canvas when nothing is selected.</p></>}
+        {activePanel==="Layers" && <>{canvasRef.current?.getObjects().map((obj,i)=><button key={i} className="studio-layer-row" onClick={()=>{const c=canvasRef.current;if(c){c.setActiveObject(obj);c.requestRenderAll();setSelected(obj);}}}><Layers size={15}/><span>{obj instanceof IText?String(obj.text||"Text layer").slice(0,22):obj instanceof FabricImage?"Image layer":obj instanceof Circle?"Circle":obj instanceof Rect?"Rectangle":"Shape"} </span><small>{i+1}</small></button>) || <p className="studio-help">Add an element to see it here.</p>}</>}
+        <div className="studio-panel-bottom"><span className="studio-save-dot"/><span>Draft stored on this device</span></div>
+      </aside>
+      <section className="studio-workspace">
+        <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span>My projects</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
+        <div className="studio-canvas-stage"><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
+        <div className="studio-workspace-footer"><span><Check size={14}/> All changes stay in your browser</span><span>Tip: select an object to edit its properties</span></div>
+      </section>
+      <aside className="studio-inspector">
+        <div className="studio-inspector-title"><h2>Properties</h2>{selected&&<span className="studio-selected-pill">Selected</span>}</div>
+        {!selected ? <div className="studio-empty-selection"><div className="studio-empty-icon"><AlignLeft size={21}/></div><strong>Nothing selected</strong><p>Select an element on the canvas to adjust its style, position and appearance.</p></div> : <>
+          <div className="studio-selected-object"><span className="studio-object-icon">{selected instanceof IText?<Type size={17}/>:selected instanceof FabricImage?<ImagePlus size={17}/>:<Shapes size={17}/>}</span><span><strong>{selected instanceof IText?"Text layer":selected instanceof FabricImage?"Image layer":selected instanceof Circle?"Circle shape":selected instanceof Rect?"Rectangle shape":"Design element"}</strong><small>Canvas object</small></span><button className="studio-subtle-icon" title="Delete object" onClick={deleteObject}><Trash2 size={16}/></button></div>
+          {selected instanceof IText&&<><label className="studio-field"><span>Text size</span><div className="studio-input-with-unit"><input type="number" min="8" max="220" value={fontSize} onChange={(e)=>{const n=Number(e.target.value);setFontSize(n);applyProperty("fontSize",n);}}/><span>px</span></div></label><label className="studio-field"><span>Font family</span><select value={selected.fontFamily||"Arial"} onChange={(e)=>applyProperty("fontFamily",e.target.value)}><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option><option>Courier New</option></select></label><label className="studio-field"><span>Style</span><select value={String(selected.fontWeight||"normal")} onChange={(e)=>applyProperty("fontWeight",e.target.value)}><option value="normal">Regular</option><option value="bold">Bold</option></select></label><label className="studio-field"><span>Alignment</span><select value={selected.textAlign||"left"} onChange={(e)=>applyProperty("textAlign",e.target.value)}><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></label></>}
+          <label className="studio-field"><span>Colour</span><div className="studio-color-row"><input type="color" aria-label="Object colour" value={/^#[0-9a-f]{6}$/i.test(objectColor)?objectColor:"#24212b"} onChange={(e)=>{setObjectColor(e.target.value);applyProperty(selected instanceof Line?"stroke":"fill",e.target.value);}}/><input value={objectColor.toUpperCase()} readOnly aria-label="Selected colour hex"/></div></label>
+          <label className="studio-field"><span>Opacity <b>{Math.round((selected.opacity??1)*100)}%</b></span><input type="range" min="0.1" max="1" step="0.05" value={selected.opacity??1} onChange={(e)=>applyProperty("opacity",Number(e.target.value))}/></label>
+          <label className="studio-field"><span>Rotation <b>{Math.round(selected.angle||0)}°</b></span><input type="range" min="-180" max="180" step="1" value={selected.angle||0} onChange={(e)=>applyProperty("angle",Number(e.target.value))}/></label>
+          <div className="studio-object-actions"><button onClick={duplicateObject}><Copy size={15}/> Duplicate</button><button onClick={deleteObject}><Trash2 size={15}/> Delete</button></div>
+        </>}
+        <div className="studio-inspector-divider"/>
+        <div className="studio-panel-label">Export design</div><p className="studio-export-note">Download a high-resolution image using your canvas dimensions.</p><button className="studio-export-full" onClick={()=>exportDesign("png")}><Download size={16}/> Download PNG</button><button className="studio-secondary-full" onClick={()=>exportDesign("jpeg")}><Download size={16}/> Download JPEG</button>
       </aside>
     </div>
   </main>;
