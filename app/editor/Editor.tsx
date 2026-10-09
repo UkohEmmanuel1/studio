@@ -80,7 +80,7 @@ export default function Editor() {
         width: canvas.getWidth(),
         height: canvas.getHeight(),
         background: String(canvas.backgroundColor || "#ffffff"),
-        objects: canvas.toJSON(["assetPath"]).objects
+        objects: canvas.toObject(["assetPath"]).objects
       }]
     };
     try {
