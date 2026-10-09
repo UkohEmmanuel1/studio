@@ -80,7 +80,7 @@ export default function Editor() {
         width: canvas.getWidth(),
         height: canvas.getHeight(),
         background: String(canvas.backgroundColor || "#ffffff"),
-        objects: canvas.toJSON().objects
+        objects: canvas.toJSON(["assetPath"]).objects
       }]
     };
     try {
@@ -144,9 +144,17 @@ export default function Editor() {
           const height = page?.height || document.height || project.height || 1080;
           const background = page?.background || document.background || "#ffffff";
           const objects = page?.objects || document.objects || [];
+          const hydratedObjects = await Promise.all(objects.map(async (value) => {
+            const object = value as { assetPath?: string; src?: string };
+            if (!object.assetPath) return value;
+            const assetResponse = await fetch("/api/assets?path=" + encodeURIComponent(object.assetPath));
+            if (!assetResponse.ok) throw new Error("Could not restore a stored image");
+            const assetResult = await assetResponse.json();
+            return { ...object, src: assetResult.url };
+          }));
           canvas.setDimensions({ width, height });
           canvas.backgroundColor = background;
-          await canvas.loadFromJSON({ version: "6.7.1", objects, background });
+          await canvas.loadFromJSON({ version: "6.7.1", objects: hydratedObjects, background });
           canvas.requestRenderAll();
           setCanvasSize({ width, height });
           setBackground(background);
@@ -266,21 +274,41 @@ export default function Editor() {
     if (!file || !canvas) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setStatus("Choose a PNG, JPEG or WebP image"); event.target.value = ""; return; }
     if (file.size > 8 * 1024 * 1024) { setStatus("Image must be smaller than 8 MB"); event.target.value = ""; return; }
-    const url = URL.createObjectURL(file);
-    void FabricImage.fromURL(url).then((img) => {
-      const maxWidth = canvas.getWidth() * 0.65;
-      const maxHeight = canvas.getHeight() * 0.65;
-      const scale = Math.min(maxWidth / (img.width || 1), maxHeight / (img.height || 1), 1);
-      img.set({ left: 100, top: 100, scaleX: scale, scaleY: scale, cornerColor: "#6941f4", transparentCorners: false });
-      canvas.add(img);
-      canvas.setActiveObject(img);
-      canvas.requestRenderAll();
-      setSelected(img);
-      pushHistory();
-      scheduleSave();
-      URL.revokeObjectURL(url);
-      setStatus("Image added");
-    }).catch(() => { URL.revokeObjectURL(url); setStatus("Could not load that image"); });
+    const localUrl = URL.createObjectURL(file);
+    void (async () => {
+      let sourceUrl = localUrl;
+      let assetPath: string | undefined;
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const response = await fetch("/api/assets", { method: "POST", body: form });
+        if (response.ok) {
+          const result = await response.json();
+          sourceUrl = result.url;
+          assetPath = result.path;
+        }
+      } catch {
+        // Cloud upload is optional; keep the existing local-image workflow available.
+      }
+      try {
+        const img = await FabricImage.fromURL(sourceUrl);
+        const maxWidth = canvas.getWidth() * 0.65;
+        const maxHeight = canvas.getHeight() * 0.65;
+        const scale = Math.min(maxWidth / (img.width || 1), maxHeight / (img.height || 1), 1);
+        img.set({ left: 100, top: 100, scaleX: scale, scaleY: scale, cornerColor: "#6941f4", transparentCorners: false, ...(assetPath ? { assetPath } : {}) });
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        canvas.requestRenderAll();
+        setSelected(img);
+        pushHistory();
+        scheduleSave();
+        setStatus(assetPath ? "Image uploaded to private cloud storage" : "Image added to this browser draft");
+      } catch {
+        setStatus("Could not load that image");
+      } finally {
+        URL.revokeObjectURL(localUrl);
+      }
+    })();
     event.target.value = "";
   };
 
