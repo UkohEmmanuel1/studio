@@ -1,54 +1,58 @@
 # PosterStudio
 
-PosterStudio is a browser-based social poster design studio built with Next.js App Router, React, TypeScript, Tailwind CSS, and Fabric.js.
+A browser-based social design studio built with Next.js App Router, TypeScript, Tailwind CSS and Fabric.js.
 
-## Current implementation
+## Features
 
-- Responsive marketing page with template examples, feature overview, pricing preview, FAQs, and legal starter pages.
-- Interactive Fabric.js canvas editor with editable text, rectangles, circles, lines, image upload, selection, movement, resize/rotation handles, object colour/opacity/font controls, and canvas-size presets.
-- PNG and JPEG exports at the canvas document dimensions.
-- Browser-local draft saving and restore on reload.
-- Keyboard shortcuts: Delete/Backspace removes the selected object, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo, and Ctrl/Cmd+D duplicate.
-- Image uploads accept PNG, JPEG, and WebP, up to 8 MB.
+- Create designs from common canvas presets or custom dimensions.
+- Interactive canvas with editable text, shapes, uploaded images, zoom, object properties, undo/redo and PNG/JPEG export.
+- Browser-local draft recovery for anonymous use.
+- Multi-account project persistence API and dashboard backed by Supabase Auth, Postgres and private Storage.
+- Row-level security policies restrict projects and assets to their owner.
+- GitHub Actions verifies TypeScript and the production build on pushes and pull requests.
 
 ## Requirements
 
-- Node.js 20 or newer recommended
+- Node.js 20+
 - npm
+- A Supabase project for cloud accounts and cross-device saving (optional for local editor use)
 
-## Local development
+## Local setup
 
 ```bash
 npm install
+copy .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. Open the editor at http://localhost:3000/editor.
+Open http://localhost:3000. The editor is at /editor, design creation is at /create, sign-in is at /login and the cloud project dashboard is at /dashboard.
 
-## Scripts
+## Supabase setup
 
-- `npm run dev` — start the development server.
-- `npm run build` — production build.
-- `npm start` — run the production server after building.
-- `npm run typecheck` — TypeScript check.
-- `npm run lint` — Next.js lint command (depends on the installed Next.js CLI version).
+1. Create a project in the Supabase dashboard.
+2. Copy the project URL and anon/publishable key into `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Run `supabase/migrations/202610090001_initial_schema.sql` in the Supabase SQL Editor. It creates the projects table, RLS policies, private asset bucket, and per-user asset policies.
+4. In Authentication > URL Configuration, set your Site URL to the deployed site and add `http://localhost:3000/auth/callback` and your deployed `/auth/callback` URL to the redirect allow list.
+5. Configure the same public environment variables in Vercel. Never expose a service-role key in client code or a `NEXT_PUBLIC_*` variable.
 
-## Environment variables
+Without Supabase environment variables, the editor remains usable with browser-local drafts and the dashboard explains how to enable cloud storage. Cloud APIs return an explicit configuration error rather than pretending to save.
 
-Copy `.env.example` to `.env.local` if you are preparing the future cloud integration. The current app does not read these values: Supabase authentication, PostgreSQL project storage, and Supabase Storage have not been integrated. Never put a service-role key in a `NEXT_PUBLIC_*` variable.
+## Cloud API
 
-## Persistence and privacy
+- `GET /api/projects`: list the signed-in user's projects.
+- `POST /api/projects`: create a project.
+- `GET /api/projects/:id`: load one owned project including its JSON document.
+- `PATCH /api/projects/:id`: update a project.
+- `DELETE /api/projects/:id`: delete an owned project.
 
-Drafts are saved in local storage in the current browser only. They do not synchronise between devices or accounts. Clearing browser storage will remove the local draft. Do not use this starter to store sensitive content. The privacy and terms pages are starter text and require legal review before public launch.
+All handlers validate input, require a Supabase-authenticated user, and additionally scope database operations to that user. RLS remains enabled as a second layer of authorization.
 
-## Product and deployment status
+## Deployment
 
-This is a functional editor starter, not yet the complete multi-tenant SaaS described in the product specification. Cloud authentication, server-side project ownership, database migrations/RLS, cloud asset storage, real billing, team collaboration, brand kits, and AI generation are not implemented. Pro and Team pricing cards are informational previews only; no payments are collected.
+Import this repository into Vercel and set the Supabase environment variables. Vercel detects Next.js automatically. The GitHub Actions workflow runs type-checking and a production build. A successful CI build is necessary but does not replace smoke tests against a configured Supabase project.
 
-For deployment, connect the repository to Vercel, configure the project with the Node.js runtime, install dependencies, and use `npm run build` as the build command. Run the type-check and production build in CI before treating the deployment as production-ready.
+## Current limitations
 
-## Security notes
+Cloud authentication, project CRUD endpoints, database migration, and dashboard are wired as an integration foundation. The editor still needs its canvas state fully connected to project IDs and cloud autosave; asset upload policies are prepared, but an end-to-end cloud asset upload flow is not yet implemented. Real-time collaborative editing, billing, team workspaces, and template marketplace are not included. The editor's existing local draft remains available.
 
-- Uploaded images are checked against a MIME allowlist and an 8 MB size limit in the browser. A production cloud upload endpoint must independently inspect file content and enforce quotas server-side.
-- Browser local storage is not an account-based backup.
-- Do not add real credentials to Git. Keep local secrets in `.env.local` and configure deployment secrets in the hosting provider.
+Do not use the product for sensitive documents until your deployment, security rules, backups, and privacy terms have been reviewed.

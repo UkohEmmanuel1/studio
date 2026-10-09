@@ -31,6 +31,7 @@ export default function Editor() {
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [ready, setReady] = useState(false);
   const [activePanel, setActivePanel] = useState("Design");
+  const [cloudProjectId, setCloudProjectId] = useState<string | null>(null);
 
   const pushHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -69,6 +70,45 @@ export default function Editor() {
     saveTimerRef.current = setTimeout(() => saveLocal(), 650);
   }, [saveLocal]);
 
+  const saveCloud = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    saveLocal();
+    const document = {
+      version: 1,
+      pages: [{
+        width: canvas.getWidth(),
+        height: canvas.getHeight(),
+        background: String(canvas.backgroundColor || "#ffffff"),
+        objects: canvas.toJSON().objects
+      }]
+    };
+    try {
+      const response = await fetch(cloudProjectId ? "/api/projects/" + cloudProjectId : "/api/projects", {
+        method: cloudProjectId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: projectName.trim().slice(0, 120) || "Untitled design",
+          width: canvas.getWidth(),
+          height: canvas.getHeight(),
+          document
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(response.status === 401 ? "Saved locally · sign in to sync to cloud" : result.error || "Cloud save unavailable");
+        return;
+      }
+      if (result.project?.id && !cloudProjectId) {
+        setCloudProjectId(result.project.id);
+        window.history.replaceState({}, "", "/editor?project=" + encodeURIComponent(result.project.id));
+      }
+      setStatus("Saved to your cloud workspace");
+    } catch {
+      setStatus("Saved locally · cloud connection unavailable");
+    }
+  };
+
   useEffect(() => {
     if (!elementRef.current || canvasRef.current) return;
     const canvas = new Canvas(elementRef.current, {
@@ -79,8 +119,46 @@ export default function Editor() {
       selection: true
     });
     canvasRef.current = canvas;
+    const params = new URLSearchParams(window.location.search);
+    const requestedProject = params.get("project");
+    const requestedWidth = Number(params.get("width"));
+    const requestedHeight = Number(params.get("height"));
+    const requestedTitle = params.get("title");
+    if (requestedWidth >= 50 && requestedWidth <= 10000 && requestedHeight >= 50 && requestedHeight <= 10000) {
+      canvas.setDimensions({ width: requestedWidth, height: requestedHeight });
+      setCanvasSize({ width: requestedWidth, height: requestedHeight });
+      setZoom(Math.min(0.62, 420 / requestedWidth));
+    }
+    if (requestedTitle) setProjectName(requestedTitle.slice(0, 120));
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    if (requestedProject) {
+      void fetch("/api/projects/" + encodeURIComponent(requestedProject))
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Could not load cloud project");
+          return response.json();
+        })
+        .then(async ({ project }) => {
+          const document = project.document as { width?: number; height?: number; background?: string; objects?: object[]; pages?: Array<{width:number;height:number;background:string;objects:object[]}> };
+          const page = document.pages?.[0];
+          const width = page?.width || document.width || project.width || 1080;
+          const height = page?.height || document.height || project.height || 1080;
+          const background = page?.background || document.background || "#ffffff";
+          const objects = page?.objects || document.objects || [];
+          canvas.setDimensions({ width, height });
+          canvas.backgroundColor = background;
+          await canvas.loadFromJSON({ version: "6.7.1", objects, background });
+          canvas.requestRenderAll();
+          setCanvasSize({ width, height });
+          setBackground(background);
+          setProjectName(project.title || "My design");
+          setCloudProjectId(project.id);
+          setZoom(Math.min(0.62, 420 / width));
+          pushHistory();
+          setReady(true);
+          setStatus("Cloud project loaded");
+        })
+        .catch(() => { setReady(true); setStatus("Could not load cloud project — sign in and try again"); });
+    } else if (stored) {
       try {
         const parsed = JSON.parse(stored) as SavedDocument & { projectName?: string };
         if (parsed.version === 1 && Array.isArray(parsed.objects)) {
@@ -298,7 +376,7 @@ export default function Editor() {
       <div className="studio-top-actions">
         <button className="studio-icon-btn" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={17}/></button>
         <button className="studio-icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={17}/></button>
-        <button className="studio-share-btn" onClick={saveLocal}><Save size={16}/> <span>Save</span></button>
+        <button className="studio-share-btn" onClick={()=>void saveCloud()}><Save size={16}/> <span>Save</span></button>
         <button className="studio-export-btn" onClick={()=>exportDesign("png")}><Download size={16}/> Export</button>
       </div>
     </header>
@@ -334,7 +412,7 @@ export default function Editor() {
       <section className="studio-workspace">
         <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span>My projects</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
         <div className="studio-canvas-stage"><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
-        <div className="studio-workspace-footer"><span><Check size={14}/> All changes stay in your browser</span><span>Tip: select an object to edit its properties</span></div>
+        <div className="studio-workspace-footer"><span><Check size={14}/> {cloudProjectId ? "Cloud project · autosave on this device" : "Local draft · sign in to sync across devices"}</span><span>Tip: select an object to edit its properties</span></div>
       </section>
       <aside className="studio-inspector">
         <div className="studio-inspector-title"><h2>Properties</h2>{selected&&<span className="studio-selected-pill">Selected</span>}</div>
