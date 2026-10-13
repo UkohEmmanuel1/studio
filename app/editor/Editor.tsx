@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check, LayoutTemplate, Shapes, Palette, Upload, Search, ChevronDown, Sparkles, Layers, ZoomIn, ZoomOut, PanelLeft, AlignLeft, MoveUpRight, Grid2X2 } from "lucide-react";
+import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check, LayoutTemplate, Shapes, Palette, Upload, Search, ChevronDown, Sparkles, Layers, ZoomIn, ZoomOut, PanelLeft, AlignLeft, MoveUpRight, Grid2X2, Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, MousePointer2, RotateCcw } from "lucide-react";
 import { Canvas, FabricImage, IText, Rect, Circle, Line, FabricObject } from "fabric";
 
 type SavedDocument = { version: 1; width: number; height: number; background: string; objects: object[] };
@@ -23,7 +23,7 @@ export default function Editor() {
   const [selected, setSelected] = useState<FabricObject | null>(null);
   const [projectName, setProjectName] = useState("My first poster");
   const [status, setStatus] = useState("All changes saved");
-  const [background, setBackground] = useState("#f5c45a");
+  const [background, setBackground] = useState("#ffffff");
   const [objectColor, setObjectColor] = useState("#24212b");
   const [fontSize, setFontSize] = useState(62);
   const [zoom, setZoom] = useState(0.62);
@@ -32,11 +32,15 @@ export default function Editor() {
   const [ready, setReady] = useState(false);
   const [activePanel, setActivePanel] = useState("Design");
   const [cloudProjectId, setCloudProjectId] = useState<string | null>(null);
+  const [layerRevision, setLayerRevision] = useState(0);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showRulers, setShowRulers] = useState(false);
 
   const pushHistory = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const snapshot = JSON.stringify(canvas.toJSON());
+    const snapshot = JSON.stringify(canvas.toObject(["assetPath"]));
+    setLayerRevision(v => v + 1);
     const entries = historyRef.current.slice(0, historyIndexRef.current + 1);
     if (entries[entries.length - 1] === snapshot) return;
     entries.push(snapshot);
@@ -114,7 +118,7 @@ export default function Editor() {
     const canvas = new Canvas(elementRef.current, {
       width: 1080,
       height: 1080,
-      backgroundColor: "#f5c45a",
+      backgroundColor: "#ffffff",
       preserveObjectStacking: true,
       selection: true
     });
@@ -316,6 +320,7 @@ export default function Editor() {
     if (!selected || !canvasRef.current) return;
     selected.set({ [property]: value });
     canvasRef.current.requestRenderAll();
+    pushHistory();
     scheduleSave();
   };
 
@@ -357,6 +362,41 @@ export default function Editor() {
     pushHistory();
     scheduleSave();
   };
+  const updateLayer = (obj: FabricObject, action: "up" | "down" | "visibility" | "lock") => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (action === "up") canvas.bringObjectForward(obj);
+    if (action === "down") canvas.sendObjectBackwards(obj);
+    if (action === "visibility") {
+      obj.set("visible", !obj.visible);
+      if (!obj.visible) { canvas.discardActiveObject(); setSelected(null); }
+    }
+    if (action === "lock") {
+      const locked = obj.selectable === false;
+      obj.set({ selectable: locked, evented: locked, lockMovementX: !locked, lockMovementY: !locked, lockScalingX: !locked, lockScalingY: !locked, lockRotation: !locked });
+      if (!locked) { canvas.discardActiveObject(); setSelected(null); }
+    }
+    canvas.requestRenderAll();
+    setLayerRevision(v => v + 1);
+    pushHistory();
+    scheduleSave();
+  };
+  const alignSelected = (axis: "horizontal" | "vertical") => {
+    const canvas = canvasRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!canvas || !obj) return;
+    const bounds = obj.getBoundingRect();
+    if (axis === "horizontal") obj.set("left", obj.left + (canvas.getWidth() - bounds.width) / 2 - bounds.left);
+    else obj.set("top", obj.top + (canvas.getHeight() - bounds.height) / 2 - bounds.top);
+    obj.setCoords();
+    canvas.requestRenderAll();
+    pushHistory();
+    scheduleSave();
+  };
+  const resetView = () => {
+    const canvas = canvasRef.current;
+    if (canvas) setZoom(Math.max(0.25, Math.min(0.75, 520 / canvas.getWidth(), 520 / canvas.getHeight())));
+  };
   const changePreset = (value: string) => {
     const chosen = PRESETS.find((item) => item.label === value);
     const canvas = canvasRef.current;
@@ -396,12 +436,13 @@ export default function Editor() {
     <header className="studio-topbar">
       <div className="studio-brand-group">
         <Link href="/" className="studio-back" aria-label="Back to home"><ArrowLeft size={18}/></Link>
-        <Link href="/" className="studio-logo"><span className="studio-logo-mark">P</span><span>posterstudio</span></Link>
+        <Link href="/" className="studio-logo"><span className="studio-logo-mark">P</span><span>PosterStudio</span></Link>
         <span className="studio-top-divider"/>
         <div className="studio-document-name"><input aria-label="Design name" value={projectName} onChange={(e)=>{setProjectName(e.target.value);scheduleSave();}}/><ChevronDown size={14}/></div>
       </div>
       <div className="studio-top-center"><span className="studio-save-dot"/><span>{status}</span></div>
       <div className="studio-top-actions">
+        <span className="studio-persona">DESIGN PERSONA</span>
         <button className="studio-icon-btn" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={17}/></button>
         <button className="studio-icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={17}/></button>
         <button className="studio-share-btn" onClick={()=>void saveCloud()}><Save size={16}/> <span>Save</span></button>
@@ -415,10 +456,11 @@ export default function Editor() {
           {name:"Elements",icon:<Shapes size={20}/>},
           {name:"Text",icon:<Type size={20}/>},
           {name:"Uploads",icon:<Upload size={20}/>},
-          {name:"Brand",icon:<Palette size={20}/>}
+          {name:"Brand",icon:<Palette size={20}/>},
+          {name:"Layers",icon:<Layers size={20}/>}
         ].map((tool)=><button key={tool.name} className={activePanel===tool.name?"studio-rail-item active":"studio-rail-item"} onClick={()=>setActivePanel(tool.name)}>{tool.icon}<span>{tool.name}</span></button>)}
         <div className="studio-rail-spacer"/>
-        <button className="studio-rail-item" onClick={()=>setActivePanel("Layers")}><Layers size={20}/><span>Layers</span></button>
+        <button className="studio-rail-item" onClick={()=>setActivePanel("Design")} title="Select tool"><MousePointer2 size={20}/><span>Select</span></button>
       </nav>
       <aside className="studio-panel">
         <div className="studio-panel-heading"><div><h2>{activePanel==="Brand"?"Brand kit":activePanel==="Layers"?"Layers":activePanel}</h2><p>{activePanel==="Design"?"Set up your canvas":activePanel==="Elements"?"Build with simple shapes":activePanel==="Text"?"Add a message":activePanel==="Uploads"?"Bring your own images":activePanel==="Brand"?"Choose your visual style":"Manage design objects"}</p></div><button className="studio-subtle-icon" title="Panel options"><PanelLeft size={16}/></button></div>
@@ -433,13 +475,13 @@ export default function Editor() {
         {activePanel==="Elements" && <><div className="studio-panel-label">Shapes and lines</div><div className="studio-element-grid"><button onClick={()=>addShape("rect")}><Square size={26}/><span>Rectangle</span></button><button onClick={()=>addShape("circle")}><CircleIcon size={26}/><span>Circle</span></button><button onClick={()=>addShape("line")}><MoveUpRight size={26}/><span>Line</span></button><button onClick={()=>addShape("rect")}><Grid2X2 size={26}/><span>Block</span></button></div><div className="studio-tip"><Shapes size={17}/><span>Click an element to add it to the canvas. Drag to move and use the handles to resize.</span></div></>}
         {activePanel==="Text" && <><button className="studio-add-text" onClick={addText}><Plus size={18}/> Add a text box</button><button className="studio-text-style" onClick={()=>{addText();setStatus("Headline added — double-click it to edit");}}><strong>Add a heading</strong><span>Big, bold statement</span></button><button className="studio-text-style" onClick={()=>{const c=canvasRef.current;if(!c)return;const t=new IText("Add your body text here",{left:100,top:260,fontSize:30,fontFamily:"Arial",fill:"#24212b"});c.add(t);c.setActiveObject(t);c.requestRenderAll();setSelected(t);pushHistory();scheduleSave();}}> <span style={{fontSize:17,fontWeight:700}}>Add a subheading</span><span>Support your main message</span></button><p className="studio-help">Tip: double-click any text on your canvas to edit its content.</p></>}
         {activePanel==="Uploads" && <><label className="studio-upload-zone"><Upload size={24}/><strong>Upload an image</strong><span>PNG, JPG or WebP · up to 8 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label><p className="studio-help">Your image is placed on the canvas and stays in this browser draft.</p></>}
-        {activePanel==="Brand" && <><div className="studio-panel-label">Quick palette</div><div className="studio-swatches">{["#6941f4","#f5c45a","#252a42","#ed7854","#d6e7c5","#ffffff","#191922"].map(color=><button key={color} aria-label={"Use "+color} style={{background:color}} onClick={()=>{setObjectColor(color);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",color);else changeBackground(color);}}/>)}</div><div className="studio-panel-label">Brand colours</div><p className="studio-help">Pick a colour to apply it to the selected object, or to the canvas when nothing is selected.</p></>}
-        {activePanel==="Layers" && <>{canvasRef.current?.getObjects().map((obj,i)=><button key={i} className="studio-layer-row" onClick={()=>{const c=canvasRef.current;if(c){c.setActiveObject(obj);c.requestRenderAll();setSelected(obj);}}}><Layers size={15}/><span>{obj instanceof IText?String(obj.text||"Text layer").slice(0,22):obj instanceof FabricImage?"Image layer":obj instanceof Circle?"Circle":obj instanceof Rect?"Rectangle":"Shape"} </span><small>{i+1}</small></button>) || <p className="studio-help">Add an element to see it here.</p>}</>}
+        {activePanel==="Brand" && <><div className="studio-panel-label">Quick palette</div><div className="studio-swatches">{["#315efb","#d8ff64","#17191f","#f2f3f5","#e88a6a","#ffffff","#64748b"].map(color=><button key={color} aria-label={"Use "+color} style={{background:color}} onClick={()=>{setObjectColor(color);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",color);else changeBackground(color);}}/>)}</div><div className="studio-panel-label">Brand colours</div><p className="studio-help">Pick a colour to apply it to the selected object, or to the canvas when nothing is selected.</p></>}
+        {activePanel==="Layers" && <><div className="studio-panel-label">Object stack · {canvasRef.current?.getObjects().length || 0} layers</div><div className="studio-layer-stack" data-revision={layerRevision}>{[...(canvasRef.current?.getObjects() || [])].reverse().map((obj,i)=><div key={i} className={"studio-layer-entry"+(selected===obj?" is-selected":"")}><button className="studio-layer-select" disabled={!obj.visible || !obj.selectable} onClick={()=>{const c=canvasRef.current;if(c){c.setActiveObject(obj);c.requestRenderAll();setSelected(obj);}}}><Layers size={15}/><span>{obj instanceof IText?String(obj.text||"Text layer").slice(0,22):obj instanceof FabricImage?"Image layer":obj instanceof Circle?"Circle":obj instanceof Rect?"Rectangle":"Shape"}</span></button><button aria-label="Toggle visibility" title="Toggle visibility" onClick={()=>updateLayer(obj,"visibility")}>{obj.visible?<Eye size={14}/>:<EyeOff size={14}/>}</button><button aria-label="Toggle lock" title="Toggle lock" onClick={()=>updateLayer(obj,"lock")}>{obj.selectable?<Unlock size={14}/>:<Lock size={14}/>}</button><button aria-label="Bring forward" title="Bring forward" onClick={()=>updateLayer(obj,"up")}><ArrowUp size={14}/></button><button aria-label="Send backward" title="Send backward" onClick={()=>updateLayer(obj,"down")}><ArrowDown size={14}/></button></div>)}</div>{!canvasRef.current?.getObjects().length&&<p className="studio-help">Add an element to see it in the layer stack.</p>}</>}
         <div className="studio-panel-bottom"><span className="studio-save-dot"/><span>Draft stored on this device</span></div>
       </aside>
       <section className="studio-workspace">
-        <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span>My projects</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
-        <div className="studio-canvas-stage"><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
+        <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span>My projects</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><button className={"studio-view-toggle"+(showGrid?" is-on":"")} onClick={()=>setShowGrid(v=>!v)} title="Toggle canvas grid"><Grid2X2 size={14}/> Grid</button><button className={"studio-view-toggle"+(showRulers?" is-on":"")} onClick={()=>setShowRulers(v=>!v)} title="Toggle rulers"><AlignLeft size={14}/> Rulers</button><button className="studio-view-toggle" onClick={resetView} title="Fit artboard to view"><RotateCcw size={14}/> Fit</button><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
+        <div className={"studio-canvas-stage"+(showGrid?" has-grid":"")+(showRulers?" has-rulers":"")}><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
         <div className="studio-workspace-footer"><span><Check size={14}/> {cloudProjectId ? "Cloud project · autosave on this device" : "Local draft · sign in to sync across devices"}</span><span>Tip: select an object to edit its properties</span></div>
       </section>
       <aside className="studio-inspector">
@@ -450,6 +492,7 @@ export default function Editor() {
           <label className="studio-field"><span>Colour</span><div className="studio-color-row"><input type="color" aria-label="Object colour" value={/^#[0-9a-f]{6}$/i.test(objectColor)?objectColor:"#24212b"} onChange={(e)=>{setObjectColor(e.target.value);applyProperty(selected instanceof Line?"stroke":"fill",e.target.value);}}/><input value={objectColor.toUpperCase()} readOnly aria-label="Selected colour hex"/></div></label>
           <label className="studio-field"><span>Opacity <b>{Math.round((selected.opacity??1)*100)}%</b></span><input type="range" min="0.1" max="1" step="0.05" value={selected.opacity??1} onChange={(e)=>applyProperty("opacity",Number(e.target.value))}/></label>
           <label className="studio-field"><span>Rotation <b>{Math.round(selected.angle||0)}°</b></span><input type="range" min="-180" max="180" step="1" value={selected.angle||0} onChange={(e)=>applyProperty("angle",Number(e.target.value))}/></label>
+          <div className="studio-panel-label">Align to artboard</div><div className="studio-object-actions"><button onClick={()=>alignSelected("horizontal")}><AlignHorizontalJustifyCenter size={15}/> Centre X</button><button onClick={()=>alignSelected("vertical")}><AlignVerticalJustifyCenter size={15}/> Centre Y</button></div>
           <div className="studio-object-actions"><button onClick={duplicateObject}><Copy size={15}/> Duplicate</button><button onClick={deleteObject}><Trash2 size={15}/> Delete</button></div>
         </>}
         <div className="studio-inspector-divider"/>
