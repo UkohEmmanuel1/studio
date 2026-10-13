@@ -1,40 +1,48 @@
 import Link from "next/link";
+import { ArrowUpRight, ArrowRight, Layers3, WandSparkles, Image as ImageIcon, PenTool, BookOpen, Check, Sparkles, MoveUpRight } from "lucide-react";
 
-const templates = [
-  { name: "Make it a moment", category: "Event flyer", style: "art-orange", kicker: "SAVE THE DATE", title: "MAKE IT\nA MOMENT", copy: "Good people. Big ideas. One unforgettable night.", foot: "FRIDAY · 7 PM" },
-  { name: "A little more you", category: "Personal brand", style: "art-violet", kicker: "YOUR NEXT CHAPTER", title: "A LITTLE\nMORE YOU.", copy: "Show up boldly. Your story deserves the spotlight.", foot: "START SOMETHING" },
-  { name: "Good things grow", category: "Wellness", style: "art-green", kicker: "A NOTE TO SELF", title: "GOOD THINGS\nGROW SLOWLY.", copy: "Give yourself room to become.", foot: "GROW AT YOUR PACE" },
-  { name: "The weekend edit", category: "Promotion", style: "art-dark", kicker: "THE WEEKEND EDIT", title: "YOUR NEXT\nFAVOURITE THING.", copy: "A small drop with a big point of view.", foot: "SHOP THE DROP" }
+const showcases=[
+ {label:"Brand identity",tag:"DESIGNER",kind:"identity",title:"Objects of\ninterest.",sub:"A new point of view"},
+ {label:"Campaign artwork",tag:"PHOTO",kind:"campaign",title:"BEYOND\nTHE FRAME",sub:"Create without limits"},
+ {label:"Editorial layout",tag:"PUBLISHER",kind:"editorial",title:"THE ART\nOF FORM",sub:"Issue No. 01 / Studio"}
 ];
-
-export default function HomePage() {
-  return <main>
-    <header className="container nav">
-      <Link className="logo" href="/"><span className="logo-mark">P</span> PosterStudio</Link>
-      <nav className="nav-links" aria-label="Main navigation"><Link href="/#templates">Templates</Link><Link href="/#features">Features</Link><Link href="/#pricing">Pricing</Link><Link className="btn btn-secondary" href="/editor">Open studio <span aria-hidden="true">↗</span></Link></nav>
-    </header>
-    <section className="hero container">
-      <div className="eyebrow"><span>✳</span> A CREATIVE STUDIO FOR WHAT’S NEXT</div>
-      <h1>Ideas deserve<br/>to be <span>seen.</span></h1>
-      <p className="hero-copy">Create scroll-stopping content for your brand, business, or next big idea. Start with a polished layout, make it yours, and export in minutes.</p>
-      <div className="hero-actions"><Link className="btn btn-primary" href="/editor">Create a design <span aria-hidden="true">→</span></Link><Link className="btn btn-secondary" href="/#templates">Explore templates</Link></div>
-      <div className="preview-shell" aria-label="PosterStudio application preview">
-        <div className="preview-bar"><i className="dot"/><i className="dot"/><i className="dot"/><span style={{marginLeft:10}}>Untitled design — PosterStudio</span></div>
-        <div className="preview-app"><aside className="preview-side"><strong>DESIGN TOOLS</strong><div className="tool-row active">▧ Templates</div><div className="tool-row">T Text</div><div className="tool-row">◇ Elements</div><div className="tool-row">▧ Uploads</div><div className="tool-row">◐ Background</div></aside>
-          <div className="preview-workspace"><div className="poster"><div className="poster-kicker">THE CREATIVE CLUB</div><h3>MAKE<br/>ROOM<br/>FOR BIG<br/>IDEAS.</h3><p>For the things you can’t stop thinking about.</p><div className="poster-shape"/><div className="poster-tag">CREATE YOUR OWN RULES</div></div></div>
-          <aside className="preview-props"><strong>Design properties</strong><div className="prop-line"/><div className="prop-line short"/><div className="prop-line"/><div className="prop-line short"/><div style={{display:"flex",gap:7,marginTop:20}}><i className="dot" style={{width:20,height:20,background:"#f5c45a"}}/><i className="dot" style={{width:20,height:20,background:"#6941f4"}}/><i className="dot" style={{width:20,height:20,background:"#252a42"}}/></div></aside>
-        </div>
-      </div>
-    </section>
-    <section className="section container" id="templates"><div className="section-head"><div className="eyebrow">A HEAD START, NOT A SHORTCUT</div><h2>Start strong. Make it yours.</h2><p>A considered collection of starting points for brands, creators, and teams.</p></div>
-      <div className="template-grid">{templates.map((item) => <Link className="template-card" href="/editor" key={item.name}><div className={"template-art "+item.style}><small>{item.kicker}</small><div><h3>{item.title.split("\n").map((line,i)=><span key={line+i} style={{display:"block",letterSpacing:"-1px"}}>{line}</span>)}</h3><p>{item.copy}</p></div><span>{item.foot}</span><div className="art-orb"/></div><div style={{padding:"14px 15px"}}><strong style={{fontSize:13}}>{item.name}</strong><p style={{margin:"5px 0 0",fontSize:12,color:"#858190"}}>{item.category}</p></div></Link>)}</div>
-      <div style={{textAlign:"center",marginTop:28}}><Link className="btn btn-secondary" href="/editor">Explore the studio →</Link></div>
-    </section>
-    <section className="section" id="features" style={{background:"#f4f2f9"}}><div className="container"><div className="section-head"><div className="eyebrow">YOUR CREATIVE SPACE</div><h2>Powerful tools.<br/>A clearer creative flow.</h2><p>The essentials to move from rough idea to finished visual without the clutter.</p></div>
-      <div className="feature-grid"><article className="feature"><div className="feature-icon">▧</div><h3>Start with a spark</h3><p>Use a template or begin with a blank canvas sized for your favourite social platform.</p></article><article className="feature"><div className="feature-icon">✳</div><h3>Make every detail yours</h3><p>Edit text, colour, shapes and imagery in a hands-on canvas built for quick iteration.</p></article><article className="feature"><div className="feature-icon">↗</div><h3>Ready for the feed</h3><p>Export your finished artwork as a crisp PNG or JPEG, sized to your design.</p></article></div>
-    </div></section>
-    <section className="section container" id="pricing"><div className="section-head"><div className="eyebrow">SIMPLE BY DESIGN</div><h2>Room to create at every stage.</h2><p>Start free. Upgrade when your creative work calls for more.</p></div><div className="pricing-grid"><article className="price-card"><h3>Free</h3><p>For your first big idea.</p><div className="price">$0 <span style={{fontSize:13,fontWeight:400,letterSpacing:0}}>/ forever</span></div><ul><li>Core canvas editor</li><li>PNG and JPEG export</li><li>Browser-based draft saving</li></ul><Link className="btn btn-secondary" href="/editor" style={{width:"100%"}}>Start creating</Link></article><article className="price-card popular"><div className="eyebrow">COMING INTO FOCUS</div><h3 style={{marginTop:14}}>Pro</h3><p>For your everyday creative work.</p><div className="price">$12 <span style={{fontSize:13,fontWeight:400,letterSpacing:0}}>/ month</span></div><ul><li>Planned premium templates</li><li>Brand kits and shared assets</li><li>Higher export limits</li></ul><a className="btn btn-primary" href="mailto:hello@posterstudio.example?subject=PosterStudio%20Pro" style={{width:"100%"}}>Join the waitlist</a></article><article className="price-card"><h3>Team</h3><p>For brands making things together.</p><div className="price">Let’s talk</div><ul><li>Planned team workspaces</li><li>Brand consistency tools</li><li>Team collaboration</li></ul><a className="btn btn-secondary" href="mailto:hello@posterstudio.example?subject=PosterStudio%20Teams" style={{width:"100%"}}>Contact us</a></article></div><p style={{textAlign:"center",fontSize:12,color:"#858190",marginTop:18}}>Pro and Team are preview plans; payment is not enabled.</p></section>
-    <section className="section" style={{background:"#f4f2f9"}}><div className="container"><div className="section-head"><div className="eyebrow">GOOD QUESTIONS</div><h2>Before you get creating.</h2></div><div className="faq"><details><summary>Do I need design experience?</summary><p>Not at all. Start with a blank canvas or use the editor’s sample layouts and simple tools to build your own poster.</p></details><details><summary>Can I download my design?</summary><p>Yes. The editor supports exporting the current canvas as PNG or JPEG at its configured dimensions.</p></details><details><summary>Are my designs stored in the cloud?</summary><p>You can work with local drafts or sign in to save supported projects to your private cloud workspace.</p></details><details><summary>Can I use it on my phone?</summary><p>The landing page and basic editor controls adapt to smaller screens. For detailed canvas work, a desktop or tablet is recommended.</p></details></div></div></section>
-    <footer className="footer"><div className="container footer-inner"><Link className="logo" href="/"><span className="logo-mark">P</span> posterstudio</Link><span>Make something worth stopping for.</span><span>© {new Date().getFullYear()} PosterStudio · <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link></span></div></footer>
-  </main>;
+const disciplines=[
+ {name:"Photo",description:"Bring imagery into focus. Import, compose, adjust and export.",icon:ImageIcon,tone:"photo"},
+ {name:"Designer",description:"Shape your ideas with type, objects and precise layouts.",icon:PenTool,tone:"designer"},
+ {name:"Publisher",description:"Build considered compositions with editorial thinking.",icon:BookOpen,tone:"publisher"}
+];
+export default function HomePage(){
+ return <main className="nova-site">
+  <header className="nova-header"><div className="nova-container nova-nav">
+   <Link href="/" className="nova-brand" aria-label="PosterStudio home"><span className="nova-symbol">✳</span><span>poster<span className="nova-brand-light">studio</span></span><span className="nova-brand-tag">BETA</span></Link>
+   <nav className="nova-navlinks" aria-label="Main navigation"><Link href="#workspaces">Workspaces</Link><Link href="#inspiration">Inspiration</Link><Link href="#features">Features</Link></nav>
+   <div className="nova-nav-actions"><Link href="/dashboard" className="nova-nav-login">My workspace</Link><Link href="/create" className="nova-button nova-button-dark">Start creating <ArrowUpRight size={16}/></Link></div>
+  </div></header>
+  <section className="nova-hero nova-container">
+   <div className="nova-hero-copy"><span className="nova-kicker"><span className="nova-live-dot"/> YOUR IDEAS. ONE CREATIVE SPACE.</span>
+    <h1>Make space<br/>for <em>what's next.</em></h1>
+    <p>A beautifully focused creative workspace for everything you imagine. Compose visuals, explore layouts, and turn your next idea into something remarkable.</p>
+    <div className="nova-hero-actions"><Link href="/create" className="nova-button nova-button-accent">Start creating for free <ArrowUpRight size={17}/></Link><Link href="/editor" className="nova-text-link">Explore the editor <ArrowRight size={16}/></Link></div>
+    <div className="nova-hero-foot"><span className="nova-avatar-stack"><i>A</i><i>B</i><i>C</i></span><span>Designed for curious minds and creative work.</span></div>
+   </div>
+   <div className="nova-hero-visual" aria-label="Creative compositions preview">
+    <div className="nova-visual-grid"/>
+    <div className="nova-visual-card nova-visual-back"><span>STUDIO / EXPERIMENT 02</span><div className="nova-visual-circle"/><strong>FORM<br/>FOLLOWS<br/>FEELING.</strong></div>
+    <div className="nova-visual-card nova-visual-front"><div className="nova-front-top"><span>FIELD NOTES — 001</span><span>✳</span></div><div className="nova-front-art"><div className="nova-front-sun"/><div className="nova-front-hill"/></div><div className="nova-front-bottom"><strong>Find your<br/>own perspective.</strong><span>THE CREATIVE EDITION</span></div></div>
+    <div className="nova-floating-chip"><span className="nova-chip-icon"><Layers3 size={16}/></span><span><strong>Make it yours</strong><small>Every detail, in your hands</small></span></div>
+    <span className="nova-visual-label">CREATE / EXPLORE / EXPRESS</span>
+   </div>
+  </section>
+  <section id="workspaces" className="nova-workspaces"><div className="nova-container">
+   <div className="nova-section-intro"><div><span className="nova-overline">ONE STUDIO. MANY POSSIBILITIES.</span><h2>Find your<br/><em>creative flow.</em></h2></div><p>Different disciplines, one intuitive space. Choose your starting point and let the work take shape.</p></div>
+   <div className="nova-discipline-grid">{disciplines.map(d=><Link href="/editor" key={d.name} className={"nova-discipline nova-"+d.tone}><div className="nova-discipline-art"><d.icon size={36} strokeWidth={1.25}/><span className="nova-discipline-decoration"/></div><div className="nova-discipline-info"><div><span className="nova-overline">WORKSPACE</span><h3>{d.name}</h3><p>{d.description}</p></div><span className="nova-circle-arrow"><ArrowUpRight size={20}/></span></div></Link>)}</div>
+   <p className="nova-availability">Workspace modes are in development. Current editing tools are shared across modes.</p>
+  </div></section>
+  <section id="inspiration" className="nova-inspiration nova-container"><div className="nova-section-intro"><div><span className="nova-overline">MADE TO INSPIRE</span><h2>Every idea<br/>starts <em>somewhere.</em></h2></div><Link href="/create" className="nova-text-link">Explore canvas sizes <ArrowUpRight size={16}/></Link></div>
+   <div className="nova-showcase-grid">{showcases.map(x=><Link href="/create" key={x.label} className="nova-showcase"><div className={"nova-showcase-art nova-showcase-"+x.kind}><span className="nova-showcase-tag">{x.tag}</span><strong>{x.title}</strong><small>{x.sub}</small><div className="nova-showcase-decoration"/></div><div className="nova-showcase-meta"><span>{x.label}</span><MoveUpRight size={17}/></div></Link>)}</div>
+  </section>
+  <section id="features" className="nova-feature-band"><div className="nova-container nova-feature-inner"><div><span className="nova-overline">THE DETAILS MATTER</span><h2>Less friction.<br/><em>More creating.</em></h2></div><div className="nova-feature-list"><div><WandSparkles size={20}/><span><strong>Start in seconds</strong><small>Open a blank canvas or pick a familiar format.</small></span></div><div><Layers3 size={20}/><span><strong>Stay in control</strong><small>Work with layers, text, shapes, colors and images.</small></span></div><div><Check size={20}/><span><strong>Make it real</strong><small>Save local drafts and export your finished design.</small></span></div></div></div></section>
+  <section className="nova-end-cta nova-container"><div className="nova-end-orb"/><span className="nova-overline">YOUR NEXT IDEA STARTS HERE</span><h2>Go make<br/><em>something great.</em></h2><p>A simple idea can become something extraordinary.</p><Link href="/create" className="nova-button nova-button-accent">Open your studio <ArrowUpRight size={18}/></Link></section>
+  <footer className="nova-footer"><div className="nova-container nova-footer-inner"><Link href="/" className="nova-brand"><span className="nova-symbol">✳</span><span>posterstudio</span></Link><span>Creative space for the ideas ahead.</span><div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><span>© {new Date().getFullYear()}</span></div></div></footer>
+ </main>
 }
