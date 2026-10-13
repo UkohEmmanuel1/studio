@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ArrowRight, Layers3, WandSparkles, Image as ImageIcon, PenTool, BookOpen, Check, Sparkles, MoveUpRight } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Layers3, WandSparkles, Image as ImageIcon, PenTool, BookOpen, Check, MoveUpRight } from "lucide-react";
 
 const showcases=[
  {label:"Brand identity",tag:"DESIGNER",kind:"identity",title:"Objects of\ninterest.",sub:"A new point of view"},
@@ -20,7 +20,7 @@ export default function HomePage(){
   </div></header>
   <section className="nova-hero nova-container">
    <div className="nova-hero-copy"><span className="nova-kicker"><span className="nova-live-dot"/> YOUR IDEAS. ONE CREATIVE SPACE.</span>
-    <h1>Make space<br/>for <em>what's next.</em></h1>
+    <h1>Make space<br/>for <em>what&apos;s next.</em></h1>
     <p>A beautifully focused creative workspace for everything you imagine. Compose visuals, explore layouts, and turn your next idea into something remarkable.</p>
     <div className="nova-hero-actions"><Link href="/create" className="nova-button nova-button-accent">Start creating for free <ArrowUpRight size={17}/></Link><Link href="/editor" className="nova-text-link">Explore the editor <ArrowRight size={16}/></Link></div>
     <div className="nova-hero-foot"><span className="nova-avatar-stack"><i>A</i><i>B</i><i>C</i></span><span>Designed for curious minds and creative work.</span></div>

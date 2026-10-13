@@ -245,7 +245,7 @@ export default function Editor() {
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable)) return;
       const mod = event.ctrlKey || event.metaKey;
       if (event.key === "Delete" || event.key === "Backspace") { const active = canvas.getActiveObject(); if (active) { canvas.remove(active); canvas.discardActiveObject(); canvas.requestRenderAll(); pushHistory(); scheduleSave(); } }
-      if (mod && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+      if (mod && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo(); }
       if (mod && event.key.toLowerCase() === "d") { event.preventDefault(); duplicateObject(); }
     };
     window.addEventListener("keydown", onKey);
