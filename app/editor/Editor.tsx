@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check, LayoutTemplate, Shapes, Palette, Upload, Search, ChevronDown, Sparkles, Layers, ZoomIn, ZoomOut, PanelLeft, AlignLeft, MoveUpRight, Grid2X2, Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, MousePointer2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Download, ImagePlus, Redo2, Save, Square, Circle as CircleIcon, Type, Undo2, Trash2, Copy, Plus, Check, LayoutTemplate, Shapes, Palette, Upload, Search, ChevronDown, Sparkles, Layers, ZoomIn, ZoomOut, PanelLeft, AlignLeft, MoveUpRight, Grid2X2, Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, MousePointer2, RotateCcw, Command, Maximize2, Moon, Sun, History, Camera, PenTool, BookOpen, X } from "lucide-react";
 import { Canvas, FabricImage, IText, Rect, Circle, Line, FabricObject } from "fabric";
 
 type SavedDocument = { version: 1; width: number; height: number; background: string; objects: object[] };
@@ -35,6 +35,13 @@ export default function Editor() {
   const [layerRevision, setLayerRevision] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [showRulers, setShowRulers] = useState(false);
+  const [persona, setPersona] = useState<"Photo"|"Designer"|"Publisher">("Designer");
+  const [theme, setTheme] = useState<"dark"|"light">("dark");
+  const [focusMode, setFocusMode] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [exportFormat, setExportFormat] = useState<"png"|"jpeg"|"webp">("png");
 
   const pushHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -47,6 +54,7 @@ export default function Editor() {
     if (entries.length > 40) entries.shift();
     historyRef.current = entries;
     historyIndexRef.current = entries.length - 1;
+    setHistoryRevision(v=>v+1);
   }, []);
 
   const saveLocal = useCallback(() => {
@@ -417,7 +425,7 @@ export default function Editor() {
     pushHistory();
     scheduleSave();
   };
-  const exportDesign = (format: "png" | "jpeg") => {
+  const exportDesign = (format: "png" | "jpeg" | "webp") => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     try {
@@ -432,7 +440,34 @@ export default function Editor() {
     }
   };
 
-  return <main className="studio-shell">
+  const restoreHistory = (index: number) => {
+    const canvas = canvasRef.current;
+    const snapshot = historyRef.current[index];
+    if (!canvas || !snapshot) return;
+    historyIndexRef.current = index;
+    void canvas.loadFromJSON(snapshot).then(() => {
+      canvas.requestRenderAll();
+      setSelected(null);
+      setHistoryRevision(v=>v+1);
+      setLayerRevision(v=>v+1);
+      scheduleSave();
+    });
+  };
+  const commands = [
+    {label:"Add text layer",action:()=>addText()},
+    {label:"Add rectangle",action:()=>addShape("rect")},
+    {label:"Add circle",action:()=>addShape("circle")},
+    {label:"Open layers panel",action:()=>setActivePanel("Layers")},
+    {label:"Open history panel",action:()=>setActivePanel("History")},
+    {label:"Open color panel",action:()=>setActivePanel("Color")},
+    {label:"Switch to Photo",action:()=>setPersona("Photo")},
+    {label:"Switch to Designer",action:()=>setPersona("Designer")},
+    {label:"Switch to Publisher",action:()=>setPersona("Publisher")},
+    {label:"Toggle focus mode",action:()=>setFocusMode(v=>!v)},
+    {label:"Fit canvas",action:resetView},
+    {label:"Export PNG",action:()=>exportDesign("png")}
+  ];
+  return <main className={"studio-shell studio-pro studio-theme-"+theme+(focusMode?" studio-focus":"")}>
     <header className="studio-topbar">
       <div className="studio-brand-group">
         <Link href="/" className="studio-back" aria-label="Back to home"><ArrowLeft size={18}/></Link>
@@ -442,7 +477,10 @@ export default function Editor() {
       </div>
       <div className="studio-top-center"><span className="studio-save-dot"/><span>{status}</span></div>
       <div className="studio-top-actions">
-        <span className="studio-persona">DESIGN PERSONA</span>
+        <div className="studio-persona-switcher" role="group" aria-label="Creative workspace">{(["Photo","Designer","Publisher"] as const).map(name=><button key={name} className={persona===name?"active":""} onClick={()=>{setPersona(name);setActivePanel(name==="Photo"?"Photo tools":name==="Publisher"?"Pages":"Elements");}} aria-pressed={persona===name}>{name==="Photo"?<Camera size={14}/>:name==="Designer"?<PenTool size={14}/>:<BookOpen size={14}/>}<span>{name}</span></button>)}</div>
+        <button className="studio-icon-btn" title="Command palette" aria-label="Open command palette" onClick={()=>setCommandOpen(true)}><Command size={17}/></button>
+        <button className="studio-icon-btn" title="Toggle theme" aria-label="Toggle theme" onClick={()=>setTheme(v=>v==="dark"?"light":"dark")}>{theme==="dark"?<Sun size={17}/>:<Moon size={17}/>}</button>
+        <button className="studio-icon-btn" title="Focus mode" aria-label="Focus mode" onClick={()=>setFocusMode(v=>!v)}><Maximize2 size={17}/></button>
         <button className="studio-icon-btn" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={17}/></button>
         <button className="studio-icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={17}/></button>
         <button className="studio-share-btn" onClick={()=>void saveCloud()}><Save size={16}/> <span>Save</span></button>
@@ -457,7 +495,10 @@ export default function Editor() {
           {name:"Text",icon:<Type size={20}/>},
           {name:"Uploads",icon:<Upload size={20}/>},
           {name:"Brand",icon:<Palette size={20}/>},
-          {name:"Layers",icon:<Layers size={20}/>}
+          {name:"Layers",icon:<Layers size={20}/>},
+          {name:"Color",icon:<Palette size={20}/>},
+          {name:"History",icon:<History size={20}/>},
+          {name:"Pages",icon:<BookOpen size={20}/>}
         ].map((tool)=><button key={tool.name} className={activePanel===tool.name?"studio-rail-item active":"studio-rail-item"} onClick={()=>setActivePanel(tool.name)}>{tool.icon}<span>{tool.name}</span></button>)}
         <div className="studio-rail-spacer"/>
         <button className="studio-rail-item" onClick={()=>setActivePanel("Design")} title="Select tool"><MousePointer2 size={20}/><span>Select</span></button>
@@ -476,6 +517,10 @@ export default function Editor() {
         {activePanel==="Text" && <><button className="studio-add-text" onClick={addText}><Plus size={18}/> Add a text box</button><button className="studio-text-style" onClick={()=>{addText();setStatus("Headline added — double-click it to edit");}}><strong>Add a heading</strong><span>Big, bold statement</span></button><button className="studio-text-style" onClick={()=>{const c=canvasRef.current;if(!c)return;const t=new IText("Add your body text here",{left:100,top:260,fontSize:30,fontFamily:"Arial",fill:"#24212b"});c.add(t);c.setActiveObject(t);c.requestRenderAll();setSelected(t);pushHistory();scheduleSave();}}> <span style={{fontSize:17,fontWeight:700}}>Add a subheading</span><span>Support your main message</span></button><p className="studio-help">Tip: double-click any text on your canvas to edit its content.</p></>}
         {activePanel==="Uploads" && <><label className="studio-upload-zone"><Upload size={24}/><strong>Upload an image</strong><span>PNG, JPG or WebP · up to 8 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label><p className="studio-help">Your image is placed on the canvas and stays in this browser draft.</p></>}
         {activePanel==="Brand" && <><div className="studio-panel-label">Quick palette</div><div className="studio-swatches">{["#315efb","#d8ff64","#17191f","#f2f3f5","#e88a6a","#ffffff","#64748b"].map(color=><button key={color} aria-label={"Use "+color} style={{background:color}} onClick={()=>{setObjectColor(color);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",color);else changeBackground(color);}}/>)}</div><div className="studio-panel-label">Brand colours</div><p className="studio-help">Pick a colour to apply it to the selected object, or to the canvas when nothing is selected.</p></>}
+        {activePanel==="Color" && <><div className="studio-panel-label">Document palette</div><div className="studio-swatches">{["#315efb","#82aaff","#d8ff64","#17191f","#e88a6a","#ffffff","#64748b"].map(color=><button key={color} aria-label={"Apply "+color} style={{background:color}} onClick={()=>{setObjectColor(color);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",color);else changeBackground(color);}}/>)}</div><div className="studio-panel-label">Custom color</div><input type="color" aria-label="Choose color" value={/^#[0-9a-f]{6}$/i.test(objectColor)?objectColor:"#315efb"} onChange={e=>{setObjectColor(e.target.value);if(selected)applyProperty(selected instanceof Line?"stroke":"fill",e.target.value);else changeBackground(e.target.value);}}/></>}
+        {activePanel==="History" && <><div className="studio-panel-label">Undo history · {historyRef.current.length} states</div><div className="studio-history-list" data-revision={historyRevision}>{historyRef.current.map((_,i)=><button key={i} className={i===historyIndexRef.current?"active":""} onClick={()=>restoreHistory(i)}><History size={14}/><span>{i===0?"Document opened":"Edit "+i}</span>{i===historyIndexRef.current&&<Check size={13}/>}</button>)}</div></>}
+        {activePanel==="Photo tools" && <><p className="studio-help">Photo mode currently supports imported images, transforms and opacity. Non-destructive filters and retouch brushes need a dedicated raster engine.</p><button className="studio-secondary-full" onClick={()=>setActivePanel("Uploads")}>Import a photo</button></>}
+        {activePanel==="Pages" && <><div className="studio-panel-label">Current artboard</div><div className="studio-page-preview">01 · {canvasSize.width} × {canvasSize.height}</div><p className="studio-help">Multi-page documents and master pages are not yet implemented.</p></>}
         {activePanel==="Layers" && <><div className="studio-panel-label">Object stack · {canvasRef.current?.getObjects().length || 0} layers</div><div className="studio-layer-stack" data-revision={layerRevision}>{[...(canvasRef.current?.getObjects() || [])].reverse().map((obj,i)=><div key={i} className={"studio-layer-entry"+(selected===obj?" is-selected":"")}><button className="studio-layer-select" disabled={!obj.visible || !obj.selectable} onClick={()=>{const c=canvasRef.current;if(c){c.setActiveObject(obj);c.requestRenderAll();setSelected(obj);}}}><Layers size={15}/><span>{obj instanceof IText?String(obj.text||"Text layer").slice(0,22):obj instanceof FabricImage?"Image layer":obj instanceof Circle?"Circle":obj instanceof Rect?"Rectangle":"Shape"}</span></button><button aria-label="Toggle visibility" title="Toggle visibility" onClick={()=>updateLayer(obj,"visibility")}>{obj.visible?<Eye size={14}/>:<EyeOff size={14}/>}</button><button aria-label="Toggle lock" title="Toggle lock" onClick={()=>updateLayer(obj,"lock")}>{obj.selectable?<Unlock size={14}/>:<Lock size={14}/>}</button><button aria-label="Bring forward" title="Bring forward" onClick={()=>updateLayer(obj,"up")}><ArrowUp size={14}/></button><button aria-label="Send backward" title="Send backward" onClick={()=>updateLayer(obj,"down")}><ArrowDown size={14}/></button></div>)}</div>{!canvasRef.current?.getObjects().length&&<p className="studio-help">Add an element to see it in the layer stack.</p>}</>}
         <div className="studio-panel-bottom"><span className="studio-save-dot"/><span>Draft stored on this device</span></div>
       </aside>
@@ -496,8 +541,9 @@ export default function Editor() {
           <div className="studio-object-actions"><button onClick={duplicateObject}><Copy size={15}/> Duplicate</button><button onClick={deleteObject}><Trash2 size={15}/> Delete</button></div>
         </>}
         <div className="studio-inspector-divider"/>
-        <div className="studio-panel-label">Export design</div><p className="studio-export-note">Download a high-resolution image using your canvas dimensions.</p><button className="studio-export-full" onClick={()=>exportDesign("png")}><Download size={16}/> Download PNG</button><button className="studio-secondary-full" onClick={()=>exportDesign("jpeg")}><Download size={16}/> Download JPEG</button>
+        <div className="studio-panel-label">Export design</div><label className="studio-field"><span>Format</span><select aria-label="Export format" value={exportFormat} onChange={e=>setExportFormat(e.target.value as "png"|"jpeg"|"webp")}><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></label><p className="studio-export-note">Download a high-resolution image using your canvas dimensions.</p><button className="studio-export-full" onClick={()=>exportDesign(exportFormat)}><Download size={16}/> Export {exportFormat.toUpperCase()}</button><button className="studio-secondary-full" onClick={()=>exportDesign("jpeg")}><Download size={16}/> Download JPEG</button>
       </aside>
     </div>
+    {commandOpen&&<div className="studio-command-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCommandOpen(false);}}><div className="studio-command-dialog" role="dialog" aria-modal="true" aria-label="Command palette"><div className="studio-command-search"><Search size={18}/><input autoFocus placeholder="Search tools, workspaces and actions…" aria-label="Search commands" value={commandQuery} onChange={e=>setCommandQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Escape")setCommandOpen(false);if(e.key==="Enter"){const item=commands.find(c=>c.label.toLowerCase().includes(commandQuery.toLowerCase()));if(item){item.action();setCommandOpen(false);setCommandQuery("");}}}}/><button onClick={()=>setCommandOpen(false)} aria-label="Close commands"><X size={18}/></button></div><div className="studio-command-results">{commands.filter(c=>c.label.toLowerCase().includes(commandQuery.toLowerCase())).map(c=><button key={c.label} onClick={()=>{c.action();setCommandOpen(false);setCommandQuery("");}}><Command size={14}/><span>{c.label}</span></button>)}</div><div className="studio-command-hint">Enter to run first result · Esc to close</div></div></div>}
   </main>;
 }
