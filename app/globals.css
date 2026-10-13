@@ -406,3 +406,45 @@ body{background:#fff;color:#17191f;font-family:Inter,ui-sans-serif,system-ui,-ap
 .studio-pro .studio-canvas-stage.has-grid{background-color:#1e2527;background-image:radial-gradient(#3d4a45 1px,transparent 1px)}
 .studio-pro.studio-theme-light .studio-persona-switcher button.active{background:#dcefd4;color:#315b41}
 .studio-pro.studio-theme-light .studio-rail-item.active{background:#e3f0df;color:#315b41}
+
+/* Nova editor shell v2: spatial redesign, not just accent replacement */
+.studio-nova-editor{--nova-editor-bg:#171f20;--nova-editor-panel:#202a2b;--nova-editor-line:#354344;--nova-editor-muted:#9aaea7;color:#e5ece8;background:var(--nova-editor-bg)}
+.studio-nova-editor .studio-topbar{background:#192322!important;border-bottom:1px solid #354443!important;min-height:76px;box-shadow:0 4px 25px #080f0e25}
+.studio-nova-editor .studio-logo{font-weight:650;letter-spacing:-.6px;color:#f2f6ef}
+.studio-nova-editor .studio-logo strong{font-weight:350}
+.studio-nova-editor .studio-logo-mark{border-radius:10px;background:#c7ee93!important;color:#25493c!important;font-size:22px}
+.studio-nova-editor .studio-document-name input{font-weight:650;letter-spacing:-.3px}
+.studio-nova-editor .studio-persona-switcher{background:#111a1a!important;border:1px solid #354641!important;border-radius:11px!important;padding:4px!important;gap:3px}
+.studio-nova-editor .studio-persona-switcher button{border-radius:7px!important;padding:9px 13px!important;transition:background .15s,color .15s}
+.studio-nova-editor .studio-persona-switcher button.active{background:#c7ef91!important;color:#233c31!important;box-shadow:0 3px 8px #0002}
+.studio-nova-editor .studio-share-btn{border-radius:8px!important}
+.studio-nova-editor .studio-export-btn{background:#c7ef91!important;border-radius:8px!important;color:#233c31!important}
+.studio-nova-editor .studio-body{background:#182122}
+.studio-nova-editor .studio-rail{background:#172020!important;border-right:1px solid #32403e!important;padding-top:16px}
+.studio-nova-editor .studio-rail-item{border-radius:9px!important;margin-inline:6px!important}
+.studio-nova-editor .studio-rail-item.active{background:#334a3e!important;color:#d5f7a3!important}
+.studio-nova-editor .studio-panel{background:#202a2b!important;border-right:1px solid #354242!important}
+.studio-nova-editor .studio-panel-heading{padding-top:25px!important;padding-bottom:22px!important;border-bottom:1px solid #374545!important}
+.studio-nova-panel-kicker{display:block;color:#9fc58e;font-size:9px;font-weight:800;letter-spacing:1.7px;margin-bottom:8px}
+.studio-nova-editor .studio-panel-heading h2{font-size:22px!important;letter-spacing:-.8px!important}
+.studio-nova-editor .studio-panel-label{letter-spacing:1.3px!important;font-size:10px!important;color:#a9bcb2!important}
+.studio-nova-editor .studio-preset{border-radius:9px!important}
+.studio-nova-editor .studio-preset.selected{border-color:#bde98d!important;background:#344b3f!important}
+.studio-nova-editor .studio-add-text,.studio-nova-editor .studio-export-full{background:#c7ef91!important;color:#1c3528!important;border-radius:8px!important}
+.studio-nova-editor .studio-workspace{background:#171f20!important}
+.studio-nova-editor .studio-workspace-toolbar{background:#1e2829!important;border-bottom:1px solid #354344!important;min-height:56px}
+.studio-nova-breadcrumb-label{color:#b4d69b!important;font-size:10px!important;font-weight:800!important;letter-spacing:1.2px!important}
+.studio-nova-editor .studio-canvas-stage{background:#171f20!important;position:relative;padding-top:45px!important}
+.studio-nova-editor .studio-canvas-stage.has-grid{background-image:radial-gradient(#364441 1px,transparent 1px)!important;background-size:24px 24px!important}
+.studio-nova-artboard-caption{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;white-space:nowrap;font-size:10px;letter-spacing:1px;font-weight:750;color:#a7b6ad;pointer-events:none}
+.studio-nova-artboard-caption span:first-child{color:#d1efa7}
+.studio-nova-editor .studio-canvas-wrap{box-shadow:0 22px 70px #0008,0 0 0 1px #ffffff26!important}
+.studio-nova-editor .studio-workspace-footer{background:#1e2829!important;border-top:1px solid #354344!important}
+.studio-nova-editor .studio-inspector{background:#202a2b!important;border-left:1px solid #354242!important}
+.studio-nova-editor .studio-inspector-title{border-bottom:1px solid #354242!important}
+.studio-nova-editor .studio-inspector-title h2{font-size:18px!important;letter-spacing:-.5px}
+.studio-nova-editor .studio-view-toggle.is-on{background:#365344!important;color:#d1f2a6!important;border-color:#6c9472!important}
+.studio-nova-editor .studio-icon-btn:hover,.studio-nova-editor .studio-subtle-icon:hover{color:#d1f2a6!important}
+.studio-nova-editor.studio-theme-light .studio-topbar,.studio-nova-editor.studio-theme-light .studio-panel,.studio-nova-editor.studio-theme-light .studio-inspector{background:#f7faf5!important;color:#223a31!important}
+.studio-nova-editor.studio-theme-light .studio-workspace{background:#e3eae5!important}
+@media(max-width:900px){.studio-nova-editor .studio-persona-switcher button{padding:7px 8px!important}.studio-nova-editor .studio-topbar{min-height:65px}.studio-nova-artboard-caption{font-size:9px}}

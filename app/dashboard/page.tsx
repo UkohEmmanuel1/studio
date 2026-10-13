@@ -18,9 +18,9 @@ function WorkspaceShell({children,email,cloudReady}:{children:React.ReactNode;em
  </main>
 }
 function QuickStarts(){return <div className="nova-dash-quick-grid">
- <Link href="/editor" className="nova-dash-quick nova-dash-quick-photo"><div className="nova-dash-quick-icon"><ImageIcon size={24}/></div><span>Photo composition</span><ArrowUpRight size={18}/></Link>
- <Link href="/editor" className="nova-dash-quick nova-dash-quick-designer"><div className="nova-dash-quick-icon"><PenTool size={24}/></div><span>Vector & design</span><ArrowUpRight size={18}/></Link>
- <Link href="/create" className="nova-dash-quick nova-dash-quick-publisher"><div className="nova-dash-quick-icon"><BookOpen size={24}/></div><span>Custom canvas</span><ArrowUpRight size={18}/></Link>
+ <Link href="/editor?workspace=Photo" className="nova-dash-quick nova-dash-quick-photo"><div className="nova-dash-quick-icon"><ImageIcon size={24}/></div><span>Photo composition</span><ArrowUpRight size={18}/></Link>
+ <Link href="/editor?workspace=Designer" className="nova-dash-quick nova-dash-quick-designer"><div className="nova-dash-quick-icon"><PenTool size={24}/></div><span>Vector & design</span><ArrowUpRight size={18}/></Link>
+ <Link href="/editor?workspace=Publisher" className="nova-dash-quick nova-dash-quick-publisher"><div className="nova-dash-quick-icon"><BookOpen size={24}/></div><span>Custom canvas</span><ArrowUpRight size={18}/></Link>
  </div>}
 export default async function DashboardPage(){
  const supabase=await createClient();

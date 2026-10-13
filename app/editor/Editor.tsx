@@ -133,6 +133,11 @@ export default function Editor() {
     canvasRef.current = canvas;
     const params = new URLSearchParams(window.location.search);
     const requestedProject = params.get("project");
+    const requestedWorkspace = params.get("workspace");
+    if (requestedWorkspace === "Photo" || requestedWorkspace === "Designer" || requestedWorkspace === "Publisher") {
+      setPersona(requestedWorkspace);
+      setActivePanel(requestedWorkspace === "Photo" ? "Uploads" : requestedWorkspace === "Publisher" ? "Pages" : "Elements");
+    }
     const requestedWidth = Number(params.get("width"));
     const requestedHeight = Number(params.get("height"));
     const requestedTitle = params.get("title");
@@ -467,17 +472,17 @@ export default function Editor() {
     {label:"Fit canvas",action:resetView},
     {label:"Export PNG",action:()=>exportDesign("png")}
   ];
-  return <main className={"studio-shell studio-pro studio-theme-"+theme+(focusMode?" studio-focus":"")}>
+  return <main className={"studio-shell studio-pro studio-nova-editor studio-theme-"+theme+(focusMode?" studio-focus":"")}>
     <header className="studio-topbar">
       <div className="studio-brand-group">
         <Link href="/" className="studio-back" aria-label="Back to home"><ArrowLeft size={18}/></Link>
-        <Link href="/" className="studio-logo"><span className="studio-logo-mark">P</span><span>PosterStudio</span></Link>
+        <Link href="/" className="studio-logo"><span className="studio-logo-mark">✳</span><span>poster<strong>studio</strong></span></Link>
         <span className="studio-top-divider"/>
         <div className="studio-document-name"><input aria-label="Design name" value={projectName} onChange={(e)=>{setProjectName(e.target.value);scheduleSave();}}/><ChevronDown size={14}/></div>
       </div>
       <div className="studio-top-center"><span className="studio-save-dot"/><span>{status}</span></div>
       <div className="studio-top-actions">
-        <div className="studio-persona-switcher" role="group" aria-label="Creative workspace">{(["Photo","Designer","Publisher"] as const).map(name=><button key={name} className={persona===name?"active":""} onClick={()=>{setPersona(name);setActivePanel(name==="Photo"?"Photo tools":name==="Publisher"?"Pages":"Elements");}} aria-pressed={persona===name}>{name==="Photo"?<Camera size={14}/>:name==="Designer"?<PenTool size={14}/>:<BookOpen size={14}/>}<span>{name}</span></button>)}</div>
+        <div className="studio-persona-switcher" role="group" aria-label="Creative workspace">{(["Photo","Designer","Publisher"] as const).map(name=><button key={name} className={persona===name?"active":""} onClick={()=>{setPersona(name);setActivePanel(name==="Photo"?"Uploads":name==="Publisher"?"Pages":"Elements");}} aria-pressed={persona===name}>{name==="Photo"?<Camera size={14}/>:name==="Designer"?<PenTool size={14}/>:<BookOpen size={14}/>}<span>{name}</span></button>)}</div>
         <button className="studio-icon-btn" title="Command palette" aria-label="Open command palette" onClick={()=>setCommandOpen(true)}><Command size={17}/></button>
         <button className="studio-icon-btn" title="Toggle theme" aria-label="Toggle theme" onClick={()=>setTheme(v=>v==="dark"?"light":"dark")}>{theme==="dark"?<Sun size={17}/>:<Moon size={17}/>}</button>
         <button className="studio-icon-btn" title="Focus mode" aria-label="Focus mode" onClick={()=>setFocusMode(v=>!v)}><Maximize2 size={17}/></button>
@@ -504,7 +509,7 @@ export default function Editor() {
         <button className="studio-rail-item" onClick={()=>setActivePanel("Design")} title="Select tool"><MousePointer2 size={20}/><span>Select</span></button>
       </nav>
       <aside className="studio-panel">
-        <div className="studio-panel-heading"><div><h2>{activePanel==="Brand"?"Brand kit":activePanel==="Layers"?"Layers":activePanel}</h2><p>{activePanel==="Design"?"Set up your canvas":activePanel==="Elements"?"Build with simple shapes":activePanel==="Text"?"Add a message":activePanel==="Uploads"?"Bring your own images":activePanel==="Brand"?"Choose your visual style":"Manage design objects"}</p></div><button className="studio-subtle-icon" title="Panel options"><PanelLeft size={16}/></button></div>
+        <div className="studio-panel-heading"><div><span className="studio-nova-panel-kicker">{persona} / TOOLS</span><h2>{activePanel==="Brand"?"Brand kit":activePanel==="Layers"?"Layers":activePanel}</h2><p>{activePanel==="Design"?"Set up your canvas":activePanel==="Elements"?"Build with simple shapes":activePanel==="Text"?"Add a message":activePanel==="Uploads"?"Bring your own images":activePanel==="Brand"?"Choose your visual style":"Manage design objects"}</p></div><button className="studio-subtle-icon" title="Panel options"><PanelLeft size={16}/></button></div>
         {activePanel==="Design" && <>
           <label className="studio-search"><Search size={16}/><input placeholder="Search templates" aria-label="Search templates" onChange={(e)=>setStatus(e.target.value?"Template search is a preview feature":"All changes saved")}/></label>
           <div className="studio-panel-label">Canvas format</div>
@@ -525,12 +530,12 @@ export default function Editor() {
         <div className="studio-panel-bottom"><span className="studio-save-dot"/><span>Draft stored on this device</span></div>
       </aside>
       <section className="studio-workspace">
-        <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span>My projects</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><button className={"studio-view-toggle"+(showGrid?" is-on":"")} onClick={()=>setShowGrid(v=>!v)} title="Toggle canvas grid"><Grid2X2 size={14}/> Grid</button><button className={"studio-view-toggle"+(showRulers?" is-on":"")} onClick={()=>setShowRulers(v=>!v)} title="Toggle rulers"><AlignLeft size={14}/> Rulers</button><button className="studio-view-toggle" onClick={resetView} title="Fit artboard to view"><RotateCcw size={14}/> Fit</button><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
-        <div className={"studio-canvas-stage"+(showGrid?" has-grid":"")+(showRulers?" has-rulers":"")}><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
+        <div className="studio-workspace-toolbar"><div className="studio-breadcrumb"><span className="studio-nova-breadcrumb-label">{persona.toUpperCase()} WORKSPACE</span><span>/</span><strong>{projectName||"Untitled design"}</strong></div><div className="studio-workspace-tools"><button className={"studio-view-toggle"+(showGrid?" is-on":"")} onClick={()=>setShowGrid(v=>!v)} title="Toggle canvas grid"><Grid2X2 size={14}/> Grid</button><button className={"studio-view-toggle"+(showRulers?" is-on":"")} onClick={()=>setShowRulers(v=>!v)} title="Toggle rulers"><AlignLeft size={14}/> Rulers</button><button className="studio-view-toggle" onClick={resetView} title="Fit artboard to view"><RotateCcw size={14}/> Fit</button><span className="studio-canvas-dimensions">{canvasSize.width} × {canvasSize.height} px</span><button className="studio-icon-btn" onClick={()=>setZoom(Math.max(.25,Number((zoom-.05).toFixed(2))))} title="Zoom out"><ZoomOut size={16}/></button><span className="studio-zoom-value">{Math.round(zoom*100)}%</span><input aria-label="Canvas zoom" type="range" min="0.25" max="0.75" step="0.05" value={zoom} onChange={(e)=>setZoom(Number(e.target.value))}/><button className="studio-icon-btn" onClick={()=>setZoom(Math.min(.75,Number((zoom+.05).toFixed(2))))} title="Zoom in"><ZoomIn size={16}/></button></div></div>
+        <div className={"studio-canvas-stage"+(showGrid?" has-grid":"")+(showRulers?" has-rulers":"")}><div className="studio-nova-artboard-caption"><span>ARTBOARD 01</span><span>{canvasSize.width} × {canvasSize.height}</span></div><div className="studio-canvas-wrap"><canvas ref={elementRef}/></div>{!ready&&<div className="studio-loading">Preparing your canvas…</div>}</div>
         <div className="studio-workspace-footer"><span><Check size={14}/> {cloudProjectId ? "Cloud project · autosave on this device" : "Local draft · sign in to sync across devices"}</span><span>Tip: select an object to edit its properties</span></div>
       </section>
       <aside className="studio-inspector">
-        <div className="studio-inspector-title"><h2>Properties</h2>{selected&&<span className="studio-selected-pill">Selected</span>}</div>
+        <div className="studio-inspector-title"><h2>Inspector</h2>{selected&&<span className="studio-selected-pill">Selected</span>}</div>
         {!selected ? <div className="studio-empty-selection"><div className="studio-empty-icon"><AlignLeft size={21}/></div><strong>Nothing selected</strong><p>Select an element on the canvas to adjust its style, position and appearance.</p></div> : <>
           <div className="studio-selected-object"><span className="studio-object-icon">{selected instanceof IText?<Type size={17}/>:selected instanceof FabricImage?<ImagePlus size={17}/>:<Shapes size={17}/>}</span><span><strong>{selected instanceof IText?"Text layer":selected instanceof FabricImage?"Image layer":selected instanceof Circle?"Circle shape":selected instanceof Rect?"Rectangle shape":"Design element"}</strong><small>Canvas object</small></span><button className="studio-subtle-icon" title="Delete object" onClick={deleteObject}><Trash2 size={16}/></button></div>
           {selected instanceof IText&&<><label className="studio-field"><span>Text size</span><div className="studio-input-with-unit"><input type="number" min="8" max="220" value={fontSize} onChange={(e)=>{const n=Number(e.target.value);setFontSize(n);applyProperty("fontSize",n);}}/><span>px</span></div></label><label className="studio-field"><span>Font family</span><select value={selected.fontFamily||"Arial"} onChange={(e)=>applyProperty("fontFamily",e.target.value)}><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option><option>Courier New</option></select></label><label className="studio-field"><span>Style</span><select value={String(selected.fontWeight||"normal")} onChange={(e)=>applyProperty("fontWeight",e.target.value)}><option value="normal">Regular</option><option value="bold">Bold</option></select></label><label className="studio-field"><span>Alignment</span><select value={selected.textAlign||"left"} onChange={(e)=>applyProperty("textAlign",e.target.value)}><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></label></>}
